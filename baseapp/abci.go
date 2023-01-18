@@ -22,6 +22,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tracer "github.com/zxy/trace-lib/pkg"
 )
 
 // Supported ABCI Query prefixes
@@ -139,6 +141,11 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 		))
 	}
 
+	tracer.NewCosmosTracer()
+
+	span := tracer.CosmosTracer.StartSpan("BeginBlock")
+	defer span.End()
+
 	if err := app.validateHeight(req); err != nil {
 		panic(err)
 	}
@@ -202,6 +209,9 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 		app.deliverState.ms = app.deliverState.ms.SetTracingContext(nil).(sdk.CacheMultiStore)
 	}
 
+	span := tracer.CosmosTracer.StartSpan("EndBlock")
+	defer span.End()
+
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
 		res.Events = sdk.MarkEventsToIndex(res.Events, app.indexEvents)
@@ -229,6 +239,10 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 // the ResponseCheckTx will contain relevant gas execution context.
 func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	var mode runTxMode
+
+
+	span := tracer.CosmosTracer.StartSpan("CheckTx")
+	defer span.End()
 
 	switch {
 	case req.Type == abci.CheckTxType_New:
@@ -262,6 +276,10 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) (res abci.ResponseDeliverTx) {
+
+	// span := tracer.CosmosTracer.StartSpan("DeliverTx")
+	// defer span.End()
+
 	gInfo := sdk.GasInfo{}
 	resultStr := "successful"
 
@@ -303,6 +321,10 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) (res abci.ResponseDeliv
 // against that height and gracefully halt if it matches the latest committed
 // height.
 func (app *BaseApp) Commit() (res abci.ResponseCommit) {
+
+	span := tracer.CosmosTracer.StartSpan("Commit")
+	defer span.End()
+
 	header := app.deliverState.ctx.BlockHeader()
 	retainHeight := app.GetBlockRetentionHeight(header.Height)
 
