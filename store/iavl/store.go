@@ -21,6 +21,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/kv"
+
+	tracerLib "github.com/zxy/trace-lib/pkg"
 )
 
 const (
@@ -126,6 +128,9 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
 func (st *Store) Commit() types.CommitID {
+	span := tracerLib.CosmosTracer.StartSpan("store.iavl.commit")
+	defer span.End()
+
 	defer telemetry.MeasureSince(time.Now(), "store", "iavl", "commit")
 
 	hash, version, err := st.tree.SaveVersion()

@@ -28,6 +28,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/transient"
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tracerLib "github.com/zxy/trace-lib/pkg"
 )
 
 const (
@@ -408,6 +410,9 @@ func (rs *Store) LastCommitID() types.CommitID {
 
 // Commit implements Committer/CommitStore.
 func (rs *Store) Commit() types.CommitID {
+	span := tracerLib.CosmosTracer.StartSpan("store.rootmulti.commit")
+	defer span.End()
+
 	var previousHeight, version int64
 	if rs.lastCommitInfo.GetVersion() == 0 && rs.initialVersion > 1 {
 		// This case means that no commit has been made in the store, we

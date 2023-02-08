@@ -11,6 +11,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/listenkv"
 	"github.com/cosmos/cosmos-sdk/store/tracekv"
 	"github.com/cosmos/cosmos-sdk/store/types"
+
+	tracerLib "github.com/zxy/trace-lib/pkg"
 )
 
 // storeNameCtxKey is the TraceContext metadata key that identifies
@@ -145,6 +147,9 @@ func (cms Store) GetStoreType() types.StoreType {
 
 // Write calls Write on each underlying store.
 func (cms Store) Write() {
+	span := tracerLib.CosmosTracer.StartSpan("store.Write")
+	defer span.End()
+
 	cms.db.Write()
 	for _, store := range cms.stores {
 		store.Write()
